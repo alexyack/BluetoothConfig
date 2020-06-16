@@ -18,7 +18,6 @@ namespace BluetoothConfig
         enum ParamType
         {
             None,
-            Boolean,
             Integer,
             String
         };
@@ -26,31 +25,30 @@ namespace BluetoothConfig
         {
             public String Label;
             public String Command;
+            public String Replace;
             public ParamType Type;
-            public int ValueMin, ValueMax;
+            public String Request;
+            public String Response;
+            public String Status;
+            public String Value;
         }
 
-        private readonly BluetoothParam[] paramList = new BluetoothParam[] {
-            new BluetoothParam { Label = "Dummy", Command = "QQQQ", Type = ParamType.None },
-            new BluetoothParam { Label = "Version", Command = "VERSION", Type = ParamType.None },
-            new BluetoothParam { Label = "Address", Command = "ADDR", Type = ParamType.None },
-            new BluetoothParam { Label = "Name", Command = "NAME", Type = ParamType.String },
-            new BluetoothParam { Label = "PIN", Command = "PSWD", Type = ParamType.String },
-            new BluetoothParam { Label = "Speed", Command = "UART", Type = ParamType.String },
-            new BluetoothParam { Label = "Role", Command = "ROLE", Type = ParamType.Integer, ValueMin = 0, ValueMax = 2 },
-            new BluetoothParam { Label = "Connection Mode", Command = "CMODE", Type = ParamType.Integer, ValueMin = 0, ValueMax = 1 },
-            new BluetoothParam { Label = "Binding Address", Command = "BIND", Type = ParamType.String }
-        };
+        private BluetoothParam[] paramList;
 
         SerialPort serialPort;
 
-        static string ClearResponse(BluetoothParam param, string response)
+        static string ClearResponse(BluetoothParam param, bool fulldecode)
         {
+            string response = param.Response;
             response = response.Replace(param.Command + ":", "");
-            response = response.Replace("PIN:", "");
             response = response.Replace("+", "");
             response = response.Replace("\"", "");
-//            response = response.Replace(":", ",");
+
+            if(!String.IsNullOrWhiteSpace(param.Replace))
+            response = response.Replace(param.Replace + ":", "");
+
+            if (fulldecode)
+                response = response.Replace(":", ",");
 
             return response;
         }
@@ -58,6 +56,18 @@ namespace BluetoothConfig
         public ConfigMainForm()
         {
             InitializeComponent();
+
+            paramList = new BluetoothParam[] {
+                new BluetoothParam { Label = "State", Command = "STATE", Type = ParamType.None },
+                new BluetoothParam { Label = "Version", Command = "VERSION", Type = ParamType.None },
+                new BluetoothParam { Label = "Address", Command = "ADDR", Type = ParamType.None },
+                new BluetoothParam { Label = "Name", Command = "NAME", Type = ParamType.String },
+                new BluetoothParam { Label = "PIN", Command = "PSWD", Type = ParamType.String, Replace = "PIN" },
+                new BluetoothParam { Label = "Speed", Command = "UART", Type = ParamType.String },
+                new BluetoothParam { Label = "Role", Command = "ROLE", Type = ParamType.Integer },
+                new BluetoothParam { Label = "Connection Mode", Command = "CMODE", Type = ParamType.Integer },
+                new BluetoothParam { Label = "Binding Address", Command = "BIND", Type = ParamType.String }
+            };
         }
 
         private void ConfigMainForm_Load(object sender, EventArgs e)
@@ -143,49 +153,50 @@ namespace BluetoothConfig
 
         private void ButtonRead_Click(object sender, EventArgs e)
         {
-            string request;
-            string response, confirm;
-
             serialPort.DiscardInBuffer();
 
             foreach(ListViewItem item in listParams.Items)
             {
                 if(item.Tag is BluetoothParam param)
                 {
-                    request = "AT+" + param.Command + "?";
-
-                    response = String.Empty;
-                    confirm = String.Empty;
+                    param.Request = "AT+" + param.Command + "?";
+                    param.Response = String.Empty;
+                    param.Status = String.Empty;
+                    param.Value = String.Empty;
 
                     try
                     {
-                        serialPort.WriteLine(request);
+                        serialPort.WriteLine(param.Request);
 
-                        response = serialPort.ReadLine();
-                        confirm = serialPort.ReadLine();
+                        param.Response = serialPort.ReadLine();
+                        param.Status = serialPort.ReadLine();
                     }
-                    catch (TimeoutException ex)
+                    catch(TimeoutException)
                     { }
 
-                    if (confirm == "OK")
+                    if(param.Status == "OK")
                     {
+                        param.Value = ClearResponse(param, true);
+
                         item.BackColor = SystemColors.Window;
                         item.ForeColor = SystemColors.WindowText;
 
-                        response = ClearResponse(param, response);
-
                         if (param.Type != ParamType.None &&
                         item.SubItems[1].Text == item.SubItems[2].Text)
-                            item.SubItems[2].Text = response;
+                        {
+                            item.SubItems[2].Text = param.Value; 
+                        }
 
-                        item.SubItems[1].Text = response;
+                        item.SubItems[1].Text = ClearResponse(param, false);
+
+                        item.Tag = param;
                     }
                     else
                     {
                         item.BackColor = Color.Red;
                         item.ForeColor = Color.White;
 
-                        item.SubItems[1].Text = response;
+                        item.SubItems[1].Text = param.Response;
 
                         item.Tag = null;
                     }
@@ -213,9 +224,10 @@ namespace BluetoothConfig
 
                     listParams.Controls.Add(box);
 
+                    si.Tag = param;
                     box.Tag = si;
                     box.Bounds = si.Bounds;
-                    box.Text = si.Text;
+                    box.Text = param.Value;
                     box.BringToFront();
                     box.Focus();
 
@@ -227,7 +239,7 @@ namespace BluetoothConfig
 
         private void EditBox_KeyPress(object sender, KeyPressEventArgs e)
         {
-            if (e.KeyChar == '\r') EditBox_LostFocus(sender, e);
+            if(e.KeyChar == '\r' || e.KeyChar == '\n') EditBox_LostFocus(sender, e);
         }
 
         private void EditBox_LostFocus(object sender, EventArgs e)
@@ -235,7 +247,11 @@ namespace BluetoothConfig
             TextBox box = sender as TextBox;
             ListViewItem.ListViewSubItem si = box.Tag as ListViewItem.ListViewSubItem;
 
-            si.Text = box.Text;
+            if(si.Tag is BluetoothParam param)
+            {
+                param.Value = box.Text;
+                si.Text = param.Value;
+            }
 
             listParams.Controls.Remove(box);
         }

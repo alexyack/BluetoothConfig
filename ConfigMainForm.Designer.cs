@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.Windows.Forms.ColumnHeader columnHeader1;
             System.Windows.Forms.ColumnHeader columnHeader2;
             System.Windows.Forms.ColumnHeader columnHeader3;
@@ -38,9 +39,12 @@
             this.buttonOpen = new System.Windows.Forms.Button();
             this.buttonClose = new System.Windows.Forms.Button();
             this.listParams = new System.Windows.Forms.ListView();
+            this.gridContextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.copyValueToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             columnHeader2 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.gridContextMenuStrip.SuspendLayout();
             this.SuspendLayout();
             // 
             // columnHeader1
@@ -132,6 +136,7 @@
             columnHeader1,
             columnHeader2,
             columnHeader3});
+            this.listParams.ContextMenuStrip = this.gridContextMenuStrip;
             this.listParams.FullRowSelect = true;
             this.listParams.GridLines = true;
             this.listParams.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
@@ -148,6 +153,19 @@
             this.listParams.View = System.Windows.Forms.View.Details;
             this.listParams.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.listParams_MouseDoubleClick);
             // 
+            // gridContextMenuStrip
+            // 
+            this.gridContextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.copyValueToolStripMenuItem});
+            this.gridContextMenuStrip.Name = "gridContextMenuStrip";
+            this.gridContextMenuStrip.Size = new System.Drawing.Size(134, 26);
+            // 
+            // copyValueToolStripMenuItem
+            // 
+            this.copyValueToolStripMenuItem.Name = "copyValueToolStripMenuItem";
+            this.copyValueToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.copyValueToolStripMenuItem.Text = "Copy Value";
+            // 
             // ConfigMainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -163,6 +181,7 @@
             this.Name = "ConfigMainForm";
             this.Text = "HC-05 Config Tool";
             this.Load += new System.EventHandler(this.ConfigMainForm_Load);
+            this.gridContextMenuStrip.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -177,6 +196,8 @@
         private System.Windows.Forms.Button buttonOpen;
         private System.Windows.Forms.Button buttonClose;
         private System.Windows.Forms.ListView listParams;
+        private System.Windows.Forms.ContextMenuStrip gridContextMenuStrip;
+        private System.Windows.Forms.ToolStripMenuItem copyValueToolStripMenuItem;
     }
 }
 

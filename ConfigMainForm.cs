@@ -19,9 +19,10 @@ namespace BluetoothConfig
         {
             None,
             Integer,
-            String
+            String,
+            QuotedString
         };
-        struct BluetoothParam
+        class BluetoothParam
         {
             public String Label;
             public String Command;
@@ -61,8 +62,8 @@ namespace BluetoothConfig
                 new BluetoothParam { Label = "State", Command = "STATE", Type = ParamType.None },
                 new BluetoothParam { Label = "Version", Command = "VERSION", Type = ParamType.None },
                 new BluetoothParam { Label = "Address", Command = "ADDR", Type = ParamType.None },
-                new BluetoothParam { Label = "Name", Command = "NAME", Type = ParamType.String },
-                new BluetoothParam { Label = "PIN", Command = "PSWD", Type = ParamType.String, Replace = "PIN" },
+                new BluetoothParam { Label = "Name", Command = "NAME", Type = ParamType.QuotedString },
+                new BluetoothParam { Label = "PIN", Command = "PSWD", Type = ParamType.QuotedString, Replace = "PIN" },
                 new BluetoothParam { Label = "Speed", Command = "UART", Type = ParamType.String },
                 new BluetoothParam { Label = "Role", Command = "ROLE", Type = ParamType.Integer },
                 new BluetoothParam { Label = "Connection Mode", Command = "CMODE", Type = ParamType.Integer },
@@ -97,6 +98,10 @@ namespace BluetoothConfig
                 serialPort.Open();
 
                 EnableButtons(true);
+
+                FillParamsList();
+
+                ReadValues();
             }
             catch (IOException ex)
             {
@@ -106,8 +111,6 @@ namespace BluetoothConfig
             {
                 MessageBox.Show(ex.Message, "Error opening port", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-
-            FillParamsList();
         }
 
         void FillParamsList()
@@ -116,9 +119,10 @@ namespace BluetoothConfig
             {
                 ListViewItem item = listParams.Items.Add(param.Label);
                 item.Tag = param;
+                item.UseItemStyleForSubItems = false;
 
-                item.SubItems.Add(" ");
-                item.SubItems.Add(" ");
+                item.SubItems.Add("");
+                item.SubItems.Add("");
             }
         }
 
@@ -153,6 +157,11 @@ namespace BluetoothConfig
 
         private void ButtonRead_Click(object sender, EventArgs e)
         {
+            ReadValues();
+        }
+
+        void ReadValues()
+        {
             serialPort.DiscardInBuffer();
 
             foreach(ListViewItem item in listParams.Items)
@@ -178,27 +187,25 @@ namespace BluetoothConfig
                     {
                         param.Value = ClearResponse(param, true);
 
-                        item.BackColor = SystemColors.Window;
-                        item.ForeColor = SystemColors.WindowText;
+                        item.SubItems[1].BackColor = SystemColors.Window;
+                        item.SubItems[1].ForeColor = SystemColors.WindowText;
+                        item.SubItems[2].BackColor = SystemColors.Window;
+                        item.SubItems[2].ForeColor = SystemColors.WindowText;
 
-                        if (param.Type != ParamType.None &&
+                        if(param.Type != ParamType.None &&
                         item.SubItems[1].Text == item.SubItems[2].Text)
                         {
                             item.SubItems[2].Text = param.Value; 
                         }
 
                         item.SubItems[1].Text = ClearResponse(param, false);
-
-                        item.Tag = param;
                     }
                     else
                     {
-                        item.BackColor = Color.Red;
-                        item.ForeColor = Color.White;
+                        item.SubItems[1].BackColor = Color.Red;
+                        item.SubItems[1].ForeColor = Color.White;
 
                         item.SubItems[1].Text = param.Response;
-
-                        item.Tag = null;
                     }
                 }
             }
@@ -206,9 +213,50 @@ namespace BluetoothConfig
 
         private void ButtonWrite_Click(object sender, EventArgs e)
         {
+            serialPort.DiscardInBuffer();
+            serialPort.DiscardOutBuffer();
 
+            foreach(ListViewItem item in listParams.Items)
+            {
+                if(item.Tag is BluetoothParam param)
+                {
+                    if(param.Type == ParamType.None) continue;
+
+                    param.Request = "AT+" + param.Command + "=";
+
+                    if(param.Type == ParamType.QuotedString)
+                        param.Request += "\"";
+
+                    param.Request += param.Value;
+
+                    if(param.Type == ParamType.QuotedString)
+                        param.Request += "\"";
+
+                    param.Status = String.Empty;
+
+                    try
+                    {
+                        serialPort.WriteLine(param.Request);
+
+                        param.Status = serialPort.ReadLine();
+                    }
+                    catch(TimeoutException)
+                    { }
+
+                    if(param.Status == "OK")
+                    {
+                        item.SubItems[2].BackColor = Color.LightGreen;
+                        item.SubItems[2].ForeColor = Color.Black;
+                    }
+                    else
+                    {
+                        item.SubItems[2].BackColor = Color.Red;
+                        item.SubItems[2].ForeColor = Color.White;
+                    }
+                }
+            }
         }
-
+         
         private void listParams_MouseDoubleClick(object sender, MouseEventArgs e)
         {
             ListViewItem item = listParams.GetItemAt(e.X, e.Y);
@@ -225,7 +273,7 @@ namespace BluetoothConfig
                     listParams.Controls.Add(box);
 
                     si.Tag = param;
-                    box.Tag = si;
+                    box.Tag = item;
                     box.Bounds = si.Bounds;
                     box.Text = param.Value;
                     box.BringToFront();
@@ -245,15 +293,32 @@ namespace BluetoothConfig
         private void EditBox_LostFocus(object sender, EventArgs e)
         {
             TextBox box = sender as TextBox;
-            ListViewItem.ListViewSubItem si = box.Tag as ListViewItem.ListViewSubItem;
+            ListViewItem item = box.Tag as ListViewItem;
 
-            if(si.Tag is BluetoothParam param)
+            if(item.Tag is BluetoothParam param)
             {
                 param.Value = box.Text;
-                si.Text = param.Value;
+                item.SubItems[2].Text = param.Value;
+                item.SubItems[2].BackColor = SystemColors.Window;
+                item.SubItems[2].ForeColor = SystemColors.WindowText;
             }
 
             listParams.Controls.Remove(box);
+        }
+
+        private void ButtonAll_Click(object sender, EventArgs e)
+        {
+            StringBuilder buffer = new StringBuilder();
+
+            foreach(ListViewItem item in listParams.Items)
+            {
+                if(item.Tag is BluetoothParam param)
+                {
+                    buffer.AppendLine(param.Label + ": " + param.Value);
+                }
+            }
+
+            Clipboard.SetText(buffer.ToString());
         }
     }
 }

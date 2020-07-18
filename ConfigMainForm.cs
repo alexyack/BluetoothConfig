@@ -59,6 +59,9 @@ namespace BluetoothConfig
             InitializeComponent();
 
             paramList = new BluetoothParam[] {
+#if DEBUG
+                new BluetoothParam { Label = "Debug Fail", Command = "DEBUG", Type = ParamType.None },
+#endif
                 new BluetoothParam { Label = "State", Command = "STATE", Type = ParamType.None },
                 new BluetoothParam { Label = "Version", Command = "VERSION", Type = ParamType.None },
                 new BluetoothParam { Label = "Address", Command = "ADDR", Type = ParamType.None },
@@ -78,11 +81,11 @@ namespace BluetoothConfig
 
         private void ButtonOpen_Click(object sender, EventArgs e)
         {
-            if (cbCOM.SelectedItem == null) return;
+            if(cbCOM.SelectedItem == null) return;
 
             string nameCOM = cbCOM.SelectedItem.ToString();
 
-            if (String.IsNullOrWhiteSpace(nameCOM)) return;
+            if(String.IsNullOrWhiteSpace(nameCOM)) return;
 
             try
             {
@@ -91,8 +94,8 @@ namespace BluetoothConfig
                     PortName = cbCOM.SelectedItem.ToString(),
                     BaudRate = 38400,
                     NewLine = "\r\n",
-                    ReadTimeout = 500,
-                    WriteTimeout = 500
+                    ReadTimeout = 100,
+                    WriteTimeout = 100
                 };
 
                 serialPort.Open();
@@ -103,11 +106,7 @@ namespace BluetoothConfig
 
                 ReadValues();
             }
-            catch (IOException ex)
-            {
-                MessageBox.Show(ex.Message, "Error opening port", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 MessageBox.Show(ex.Message, "Error opening port", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
@@ -118,9 +117,11 @@ namespace BluetoothConfig
             foreach (BluetoothParam param in paramList)
             {
                 ListViewItem item = listParams.Items.Add(param.Label);
+
                 item.Tag = param;
                 item.UseItemStyleForSubItems = false;
 
+                item.SubItems.Add("");
                 item.SubItems.Add("");
                 item.SubItems.Add("");
             }
@@ -153,6 +154,8 @@ namespace BluetoothConfig
         {
             cbCOM.Items.Clear();
             cbCOM.Items.AddRange(SerialPort.GetPortNames());
+
+            buttonOpen.Enabled = cbCOM.Items.Count > 0;
         }
 
         private void ButtonRead_Click(object sender, EventArgs e)
@@ -168,7 +171,7 @@ namespace BluetoothConfig
             {
                 if(item.Tag is BluetoothParam param)
                 {
-                    param.Request = "AT+" + param.Command + "?";
+                    param.Request = $"AT+{param.Command}?";
                     param.Response = String.Empty;
                     param.Status = String.Empty;
                     param.Value = String.Empty;
@@ -183,14 +186,13 @@ namespace BluetoothConfig
                     catch(TimeoutException)
                     { }
 
+
                     if(param.Status == "OK")
                     {
                         param.Value = ClearResponse(param, true);
 
-                        item.SubItems[1].BackColor = SystemColors.Window;
-                        item.SubItems[1].ForeColor = SystemColors.WindowText;
-                        item.SubItems[2].BackColor = SystemColors.Window;
-                        item.SubItems[2].ForeColor = SystemColors.WindowText;
+                        item.SubItems[3].BackColor = SystemColors.Window;
+                        item.SubItems[3].ForeColor = SystemColors.WindowText;
 
                         if(param.Type != ParamType.None &&
                         item.SubItems[1].Text == item.SubItems[2].Text)
@@ -199,13 +201,15 @@ namespace BluetoothConfig
                         }
 
                         item.SubItems[1].Text = ClearResponse(param, false);
+
+                        item.SubItems[3].Text = param.Status;
                     }
                     else
                     {
-                        item.SubItems[1].BackColor = Color.Red;
-                        item.SubItems[1].ForeColor = Color.White;
+                        item.SubItems[3].BackColor = Color.Red;
+                        item.SubItems[3].ForeColor = Color.White;
 
-                        item.SubItems[1].Text = param.Response;
+                        item.SubItems[3].Text = param.Response;
                     }
                 }
             }
@@ -222,15 +226,12 @@ namespace BluetoothConfig
                 {
                     if(param.Type == ParamType.None) continue;
 
-                    param.Request = "AT+" + param.Command + "=";
+                    param.Request = $"AT+{param.Command}=";
 
                     if(param.Type == ParamType.QuotedString)
-                        param.Request += "\"";
-
-                    param.Request += param.Value;
-
-                    if(param.Type == ParamType.QuotedString)
-                        param.Request += "\"";
+                        param.Request += $"\"{param.Value}\"";
+                    else 
+                        param.Request += param.Value;
 
                     param.Status = String.Empty;
 
@@ -243,15 +244,17 @@ namespace BluetoothConfig
                     catch(TimeoutException)
                     { }
 
+                    item.SubItems[3].Text = param.Status;
+
                     if(param.Status == "OK")
                     {
-                        item.SubItems[2].BackColor = Color.LightGreen;
-                        item.SubItems[2].ForeColor = Color.Black;
+                        item.SubItems[3].BackColor = Color.LightGreen;
+                        item.SubItems[3].ForeColor = Color.Black;
                     }
                     else
                     {
-                        item.SubItems[2].BackColor = Color.Red;
-                        item.SubItems[2].ForeColor = Color.White;
+                        item.SubItems[3].BackColor = Color.Red;
+                        item.SubItems[3].ForeColor = Color.White;
                     }
                 }
             }

@@ -31,6 +31,7 @@
             System.Windows.Forms.ColumnHeader columnHeader1;
             System.Windows.Forms.ColumnHeader columnHeader2;
             System.Windows.Forms.ColumnHeader columnHeader3;
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ConfigMainForm));
             this.buttonWrite = new System.Windows.Forms.Button();
             this.buttonRead = new System.Windows.Forms.Button();
             this.cbCOM = new System.Windows.Forms.ComboBox();
@@ -38,6 +39,7 @@
             this.buttonOpen = new System.Windows.Forms.Button();
             this.buttonClose = new System.Windows.Forms.Button();
             this.listParams = new System.Windows.Forms.ListView();
+            this.columnHeader4 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.buttonAll = new System.Windows.Forms.Button();
             columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             columnHeader2 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
@@ -47,7 +49,7 @@
             // columnHeader1
             // 
             columnHeader1.Text = "Name";
-            columnHeader1.Width = 360;
+            columnHeader1.Width = 240;
             // 
             // columnHeader2
             // 
@@ -132,7 +134,8 @@
             this.listParams.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             columnHeader1,
             columnHeader2,
-            columnHeader3});
+            columnHeader3,
+            this.columnHeader4});
             this.listParams.FullRowSelect = true;
             this.listParams.GridLines = true;
             this.listParams.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
@@ -147,6 +150,11 @@
             this.listParams.UseCompatibleStateImageBehavior = false;
             this.listParams.View = System.Windows.Forms.View.Details;
             this.listParams.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.listParams_MouseDoubleClick);
+            // 
+            // columnHeader4
+            // 
+            this.columnHeader4.Text = "Status";
+            this.columnHeader4.Width = 120;
             // 
             // buttonAll
             // 
@@ -172,6 +180,8 @@
             this.Controls.Add(this.cbCOM);
             this.Controls.Add(this.buttonRead);
             this.Controls.Add(this.buttonWrite);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.MinimumSize = new System.Drawing.Size(784, 400);
             this.Name = "ConfigMainForm";
             this.Text = "HC-05 Config Tool";
             this.Load += new System.EventHandler(this.ConfigMainForm_Load);
@@ -190,6 +200,7 @@
         private System.Windows.Forms.Button buttonClose;
         private System.Windows.Forms.ListView listParams;
         private System.Windows.Forms.Button buttonAll;
+        private System.Windows.Forms.ColumnHeader columnHeader4;
     }
 }
 

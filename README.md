@@ -19,4 +19,5 @@ Opens and close communiacation with selected Com-port.
 ## Read / Write
 
 Read current values from Blutooth module and writes changed values to the module.
-'New Value' column is editable buy double click.
+
+'New Value' column is editable by double click.

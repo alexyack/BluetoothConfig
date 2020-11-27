@@ -14,10 +14,11 @@ Com-port dropdown list is refreshed every time it is drop down.
 
 Opens and close communiacation with selected Com-port.
 
-**3840 bps 8N1 bits**
+**38400 bps 8N1 bits**
 
 ## Read / Write
 
 Read current values from Blutooth module and writes changed values to the module.
 
 'New Value' column is editable by double click.
+Value saved on enter/return key press or click outside of edit (lost focus).

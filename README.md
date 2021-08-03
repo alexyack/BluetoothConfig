@@ -12,9 +12,10 @@ Com-port dropdown list is refreshed every time it is drop down.
 
 ## Open / Close
 
-Opens and close communiacation with selected Com-port.
+Opens and close communiacation with selected COM-port.
 
-**38400 bps 8N1 bits**
+Speed - **38400 bps**
+Data bits - **8N1**
 
 ## Read / Write
 

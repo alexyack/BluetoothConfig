@@ -1,4 +1,7 @@
 # BluetoothConfig
+
+[![MSBuild](https://github.com/alexyack/BluetoothConfig/actions/workflows/msbuild.yml/badge.svg)](https://github.com/alexyack/BluetoothConfig/actions/workflows/msbuild.yml)
+
 HC-05 Bluetooth Module Config Tool
 
 This tool is developed to help with setup of new HC-05 Bluetooth modules.

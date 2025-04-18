@@ -3,6 +3,9 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 using System.IO.Ports;
+using System.Management;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace BluetoothConfig
 {
@@ -80,11 +83,15 @@ namespace BluetoothConfig
 
             if(String.IsNullOrWhiteSpace(nameCOM)) return;
 
+            nameCOM = nameCOM.Split(' ').FirstOrDefault();
+
+            if (String.IsNullOrWhiteSpace(nameCOM)) return;
+
             try
             {
                 serialPort = new SerialPort
                 {
-                    PortName = cbCOM.SelectedItem.ToString(),
+                    PortName = nameCOM,
                     BaudRate = 38400,
                     NewLine = "\r\n",
                     ReadTimeout = 100,
@@ -146,7 +153,17 @@ namespace BluetoothConfig
         private void ComboCOM_DropDown(object sender, EventArgs e)
         {
             cbCOM.Items.Clear();
-            cbCOM.Items.AddRange(SerialPort.GetPortNames());
+
+            using(ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM WIN32_SerialPort"))
+            {
+                string[] portnames = SerialPort.GetPortNames();
+                List<ManagementBaseObject> ports = searcher.Get().Cast<ManagementBaseObject>().ToList();
+                List<string> tList = (from n in portnames
+                             join p in ports on n equals p["DeviceID"].ToString()
+                             select n + " - " + p["Caption"]).ToList();
+
+                cbCOM.Items.AddRange(tList.ToArray());
+            }
 
             buttonOpen.Enabled = cbCOM.Items.Count > 0;
         }
